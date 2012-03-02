@@ -1,0 +1,630 @@
+%///////////////////////////////////////////////////////////////////////////////
+% <file type="public">
+%
+% <license>
+%   See the README_module.xml file for this module for copyright and license
+%   information.
+% </license>
+%   <description>
+%     <abstract>
+%       This is the Webnucleo Report for screening and reverse rate
+%       correction factors for libnucnet.
+%     </abstract>
+%     <keywords>
+%       libnucnet Module, webnucleo report, screen, reverse, ratio
+%     </keywords>
+%   </description>
+%
+%   <authors>
+%     <current>
+%       <author userid="mbradle" start_date="2008/01/28" />
+%     </current>
+%     <previous>
+%     </previous>
+%   </authors>
+%
+%   <compatibility>
+%     TeX (Web2C 7.4.5) 3.14159 kpathsea version 3.4.5
+%   </compatibility>
+%
+% </file>
+%///////////////////////////////////////////////////////////////////////////////
+%
+% This is a sample LaTeX input file.  (Version of 9 April 1986)
+%
+% A '%' character causes TeX to ignore all remaining text on the line,
+% and is used for comments like this one.
+
+\documentclass{article}    % Specifies the document style.
+
+\usepackage[dvips]{graphicx}
+\usepackage{hyperref}
+
+\def\apj{Astrophys. J}
+
+                           % The preamble begins here.
+\title{Webnucleo Technical Report: Screening and Reverse Rate Correction
+Factors in libnucnet}  % Declares the document's title.
+
+\author{Bradley S. Meyer}
+%\date{December 12, 1984}   % Deleting this command produces today's date.
+
+\begin{document}           % End of preamble and beginning of text.
+
+\maketitle                 % Produces the title.
+
+
+This technical report describes how to provide routines to include
+screening and reverse ratio correction factors for rate calculations
+in libnucnet.
+
+\section{Screening}
+
+The dense electron gas present in plasmas can enhance the rate for a
+thermonuclear reaction because the negative charge of the electrons screens
+the positive charges of the interacting nuclei.  This makes the penetration
+of the Coulomb barrier between the two positively charged reactants easier
+and thus increases their interaction rate.
+Expressions for screening exist in the literature and have been widely
+employed in nucleosynthesis calculations (e.g., \cite{1982ApJ...258..696W}).
+The question addressed here is how to implement screening in libnucnet.
+
+One way to do this is to compute the forward and reverse nuclear reaction
+rates for a zone using the libnucnet API routine
+Libnucnet\_\_Zone\_\_computeRates().
+Once the rates are computed, one can
+then iterate over the reactions and apply the screening function to each
+reaction.  Once the screening factor is computed, it is then applied to
+the rates for the reaction by using the API routine
+Libnucnet\_\_Zone\_\_replaceRatesForReaction().
+
+As of version 0.2 of libnucnet, there is a more efficient way to include
+screening in libnucnet calculations.  The user may supply a routine,
+called a Libnucnet\_\_Net\_\_screeningFunction in libnucnet.  Libnucnet
+will use this routine to compute screening.
+
+To supply a screening function, the user first writes a routine with the
+prototype:
+
+\begin{verbatim}
+double
+my_screening_function(
+  double d_t9,
+  double d_rho,
+  double d_ye,
+  int i_Z1,
+  int i_A1,
+  int i_Z2,
+  int i_A2
+  void *p_my_data
+);
+\end{verbatim}
+
+The routine may have any appropriate name.  The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf d\_t9:} The temperature $T_9$, that is, the temperature
+in $10^9$K at which to compute the screening factor.
+
+\item {\bf d\_rho:} The density $\rho$ in g/cc at which to compute the screening
+factor.
+
+\item {\bf d\_ye:} The electron-to-baryon ratio $Y_e$ at which to compute the
+screening factor.
+
+\item {\bf i\_Z1:}  The atomic number of the first reactant.
+
+\item {\bf i\_A1:}  The mass number of the first reactant.
+
+\item {\bf i\_Z2:}  The atomic number of the second reactant.
+
+\item {\bf i\_A2:}  The mass number of the second reactant.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's screening function.  If there are
+no extra data, this should be set to NULL.
+
+\end{itemize}
+
+Given these inputs, the user's routine should return the factor by which
+to change the rate for the reaction $(i\_Z1,i\_A1) + (i\_Z2,i\_A2)$ to
+account for screening.  Thus, if the rate for the reaction is $[12]$ in the
+absence of screening, the rate for the reaction with screening should be
+$f \times [12]$, where $f$ is the screening factor returned by
+the user's routine.
+
+There are two ways to call the screening routine.  The first way is to
+call the routine through the libnucnet API routine
+Libnucnet\_\_Net\_\_computeScreeningFactorForReaction().  The prototype
+for this routine is
+
+\begin{verbatim}
+double
+Libnucnet__Net__computeScreeningFactorForReaction(
+  Libnucnet__Net *self,
+  Libnucnet__Reaction *p_reaction,
+  double d_t9,
+  double d_rho,
+  double d_ye,
+  Libnucnet__Net__screeningFunction my_screening_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Net structure, which contains
+the nuclear network (nuclear + reaction) data.
+
+\item {\bf p\_reaction:}  A pointer to the Libnucnet\_\_Reaction structure
+for the reaction whose screening factor is desired.
+
+\item {\bf d\_t9:} The temperature $T_9$, that is, the temperature
+in $10^9$K at which to compute the screening factor.
+
+\item {\bf d\_rho:} The density $\rho$ in g/cc at which to compute the screening
+factor.
+
+\item {\bf d\_ye:} The electron-to-baryon ratio $Y_e$ at which to compute the
+screening factor.
+
+\item {\bf my\_screening\_function:} The name of the user's screening function.
+Typically, this needs to be cast as a Libnucnet\_\_Net\_\_screeningFunction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-define data structure containing
+extra data to be passed to the user's screening function.  If there are
+no extra data, this should be NULL.
+
+\end{itemize}
+
+The output from this routine is a double containing the screening factor
+for the reaction pointed to by p\_reaction, as computed by the user's routine.
+To apply this screening factor, the user then multiplies the forward and
+reverse rates for the reaction by the value returned by
+Libnucnet\_\_Net\_\_computeScreeningFactorForReaction().
+
+A more useful alternative for network calculations
+is to set the screening function for a particular zone and
+then let Libnucnet\_\_Zone\_\_computeRates() call the user's routine
+directly.  To do this, the user calls the API routine
+Libnucnet\_\_Zone\_\_setScreeningFunction(), which has the prototype
+
+\begin{verbatim}
+void
+Libnucnet__Zone__setScreeningFunction(
+  Libnucnet__Zone *self,
+  Libnucnet__screeningFunction my_screening_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+The inputs to this routine are
+\begin{itemize}
+
+\item {\bf self:}  A pointer to the Libnucnet\_\_Zone under consideration.
+
+\item {\bf my\_screening\_function:}  The name of the user's screening
+function.  The user should cast this as a Libnucnet\_\_screeningFunction.
+
+\item {\bf p\_my\_data:}  The pointer to the user's data structure.  If there
+are no extra data to pass to the user's function, this should be NULL.
+\end{itemize}
+
+The user must set the screening function prior to calling
+Libnucnet\_\_Zone\_\_computeRates(), otherwise the screening function will
+not be called.  To clear the screening function, the user simply calls
+the API routine Libnucnet\_\_Zone\_\_clearScreeningFunction().
+
+Libnucnet computes the screening factor for reactions with more than two
+reactants in the traditional manner of viewing the full reaction as a sequence
+of intermediate reactions.  For example, for the three-body reaction
+$a + b + c$, libnucnet uses the user's screening routine to compute
+$F_{screen}(a,b)$, the screening factor for the reaction $a + b$.
+It then uses the
+user's screening routine to compute $F_{screen}(a+b,c)$,
+the screening factor for
+the reaction $(a + b) + c$.  The total screening factor applied to the
+reaction $a + b + c$ is then $F_{screen}(a,b) \times F_{screen}(a+b,c)$.
+For four reactants,
+that is, the reaction $a + b + c + d$, the total screening factor would
+be $F_{screen}(a,b) \times F_{screen}(a+b,c) \times F_{screen}(a+b+c,d)$.
+Libnucnet loops over reactants,
+so this generalizes to any number of reactants.
+
+After the screening factor $F_{screen}$ is computed for the forward reaction,
+it is applied to both the forward and reverse reaction rates; thus, both the
+forward and reverse rates are multiplied by $F_{screen}$.
+It is possible to retrieve the screening factor applied to a reaction
+in a particular zone by calling the API routine
+Libnucnet\_\_Zone\_\_getScreeningFactorForReaction().
+
+By multiplying both forward and reverse rates for a reaction by the
+computed screening factor,
+the network will tend to evolve at constant temperature and density and
+in the absence of weak interaction rates to the same nuclear statistical
+equilibrium (NSE) that it would have
+without screening applied.  This may not be consistent with the physical
+nature of the screening.  In particular, the presence of the electrons
+may alter the binding energy of the nuclei and hence the resulting NSE.
+If the user wishes to correct the reverse
+reaction rate so that the NSE is consistent with the screening due to the
+electrons, he or she must apply the reverse ratio correction factor
+function as described in the next section.
+
+\section{Reverse Ratio Correction Factor}
+
+As discussed above, libnucnet applies the result of the user's screening
+function to both the forward and reverse rates for a reaction.  This means
+that the network abundances will tend to evolve to the same NSE that they
+would without application of the screening (albeit at a different overall
+rate).  If this is not consistent with the user's screening model, he or she
+must apply a correction factor to the reverse ratio.  This correction factor
+is in fact derived from the
+factor by which one would multiply the NSE abundance for
+a species to account for the effect of the electrons (or another effect).
+
+We begin by explaining
+what is meant by a libnucnet NSE correction factor.
+The condition for
+NSE is
+\begin{equation}
+\mu_i = Z_i \mu_p + N_i \mu_n, \label{eq:nse_condition}
+\end{equation}
+where $\mu_i$ is the chemical potential for species $i$ and $\mu_n$, $\mu_p$
+are the chemical potentials for neutrons and protons, respectively, and
+$Z_i$ and $N_i$ are the atomic number and neutron number for species $i$, 
+respectively.  The libnucnet default is to consider all nucleons and nuclei
+as ideal, classical Maxwell-Boltzmann particles; thus,
+\begin{equation}
+\mu_i = m_i c^2 + kT \ln\left(\frac{Y_i}{Y_{Qi}}\right)
+\equiv m_i c^2 + \mu_i',\label{eq:classical_mu}
+\label{eq:mui}
+\end{equation}
+where the quantum abundance $Y_{Qi}$ is defined as
+\begin{equation}
+Y_{Qi} \equiv \frac{G_i}{\rho N_A}
+\left(\frac{m_i kT}{2\pi\hbar^2}\right)^{3/2}.
+\label{eq:yqi}
+\end{equation}
+In Eq. (\ref{eq:mui}) $Y_i$ is the abundance of $i$ per nucleon and
+$m_ic^2$ is the rest mass energy of species $i$.
+In Eq. (\ref{eq:yqi})
+$N_A$ is Avogadro's number,
+$G_i$ is $i$'s nuclear partition function, and $k$ is Boltzmann's constant.
+It is useful to consider that $Y_{Qi}$ is the abundance per nucleon of species
+$i$ if there were one such particle in a cube with side
+one thermal de Broglie wavelength in length.
+The NSE abundance of species $i$ is then
+\begin{equation}
+Y_{i,NSE} = Y_{Qi}\exp\left\{Z_i \frac{\mu_p'}{kT} + N_i \frac{\mu_n'}{kT}
++ \frac{B_i}{kT}\right\}, \label{eq:y_i_nse}
+\end{equation}
+where $B_i$ is the nuclear binding energy of species $i$:
+\begin{equation}
+B_i = Z_i m_pc^2 + N_i m_nc^2 - m_ic^2.\label{eq:binding}
+\end{equation}
+As of version 0.7 of libnucnet, the quantities $Y_{Qi}$ and $B_i$ can be
+computed from the API routines
+{\em Libnucnet\_\_Species\_\_computeQuantumAbundance()}
+and
+{\em Libnucnet\_\_Nuc\_\_computeSpeciesBindingEnergy()},
+respectively.
+
+The libnucnet NSE correction factor is a factor $f_{i,corr}$ that gets added
+to the exponent in Eq. (\ref{eq:y_i_nse})
+to correct for deviations away from the above treatment.  In particular,
+suppose in the correct treatment,
+$\mu_i' \neq kT \ln \left( Y_i / Y_{Qi} \right)$.  We may then write
+\begin{equation}
+Y_i = Y_{Qi} \exp\left\{\frac{\mu_i'}{kT} + \left[ \ln\left(\frac{Y_i}{Y_{Qi}}
+\right)- \frac{\mu_i'}{kT}\right]\right\}.
+\end{equation}
+If we now apply the NSE condition in Eq. (\ref{eq:nse_condition}),
+we find
+\begin{equation}
+Y_{i,NSE}' = Y_{Qi} \exp\left\{
+Z_i \frac{\mu_p'}{kT} + N_i \frac{\mu_n'}{kT} + \frac{B_i}{kT} +
+\left[ \ln\left(\frac{Y_i}{Y_{Qi}}
+\right)- \frac{\mu_i'}{kT}\right]
+\right\}, \label{eq:y_i_nse_f}
+\end{equation}
+where $Y_{i,NSE}'$ indicates the nuclear statistical equilibrium abundance
+in the now correct
+treatment.  We thus see that
+\begin{equation}
+Y_{i,NSE}' = Y_{i,NSE} \exp\left\{
+\ln\left(\frac{Y_i}{Y_{Qi}}
+\right)- \frac{\mu_i'}{kT}
+\right\} \equiv Y_{i,NSE} \times e^{f_{i,corr}}, \label{eq:y_i_nse_f_2},
+\end{equation}
+where $Y_{i,NSE}$ refers to the equilibrium abundance computed from the
+neutron and proton chemical potentials and the species binding energy.
+
+An example will illustrate how this works.  Suppose each nuclear species
+has a constant potential energy $U_i$, perhaps due to a uniform background
+of electrons.  The abundance of the species is then given by
+\begin{equation}
+Y_i = Y_{Qi} \exp\left\{\frac{\mu_i'}{kT} - \frac{U_i}{kT}\right\}.
+\end{equation}
+From this, it is clear that
+\begin{equation}
+f_{i,corr} = -\frac{U_i}{kT}.
+\end{equation}
+
+To accomodate an NSE correction factor, the user first writes a
+Libnucnet\_\_Species\_\_nseCorrectionFactorFunction() with any appropriate
+name (in the case below my\_correction\_function)
+which has the prototype
+
+\begin{verbatim}
+double
+my_correction_function(
+  Libnucnet__Species *self,
+  double d_t9,
+  double d_rho,
+  double d_ye,
+  void *p_my_data
+);
+\end{verbatim}
+
+The inputs are
+\begin{itemize}
+
+\item {\bf self:}  A pointer to a Libnucnet\_\_Species.
+
+\item {\bf d\_t9:}  The temperature $T_9$, that is, the temperature
+in $10^9$ K at which to compute the correction factor.
+
+\item {\bf d\_rho:}  The density $\rho$ in g/cc at which to compute
+the correction factor.
+
+\item {\bf d\_ye:}  The electron-to-baryon ratio $Y_e$ at which to compute
+the correction factor.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure
+containing any extra data to be passed into the user's routine.  This should
+be NULL if no extra data are required.
+
+\end{itemize}
+
+This function has the Species namespace because it generally
+requires only nuclear data for a particular species, along with the temperature,
+density, and $Y_e$.  The output from this
+routine is a double that contains the natural logarithm of the
+factor by which one multiplies the
+NSE abundance of a species computed from the proton and neutron
+chemical potentials and the species binding energy
+to account for the correction.  Thus, in
+the case of electron screening, if the
+abundance of species $i$ in NSE in the absence of the electron effects is
+$Y_{i,NSE}$, the user's
+Libnucnet\_\_Species\_\_nseCorrectionFactorFunction
+should return
+the quantity $f_{i,corr}$ such that the NSE abundance with the effect of the
+electrons included is $\exp(f_{i,corr}) \times Y_{i,NSE}$.
+
+As with the screening routine, the user may call his or her routine in two
+ways.  First, the user may call the libnucnet API routine\\
+Libnucnet\_\_Net\_\_computeReverseRatioCorrectionFactorForReaction()
+directly.  The prototype for this reaction is:
+
+\begin{verbatim}
+double
+Libnucnet__Net__computeReverseRatioCorrectionFactorForReaction(
+  Libnucnet__Net *self,
+  Libnucnet__Reaction *p_reaction,
+  double d_t9,
+  double d_rho,
+  double d_ye,
+  Libnucnet__Species__nseCorrectionFactorFunction
+    my_correction_function,
+  void *p_my_data
+);
+\end{verbatim}
+
+The inputs are
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Net structure, which contains
+the nuclear network (nuclear + reaction) data.
+
+\item {\bf p\_reaction:}  A pointer to the Libnucnet\_\_Reaction structure
+for the reaction whose reverse ratio correction factor is desired.
+
+\item {\bf d\_t9:}  The temperature $T_9$, that is, the temperature
+in $10^9$ K at which to compute the correction factor.
+
+\item {\bf d\_rho:}  The density $\rho$ in g/cc at which to compute
+the correction factor.
+
+\item {\bf d\_ye:}  The electron-to-baryon ratio $Y_e$ at which to compute
+the correction factor.
+
+\item {\bf my\_correction\_function:}  The
+name of the user's correction factor function.  The user should cast this
+as a Libnucnet\_\_Species\_\_nseCorrectionFactorFunction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure
+containing any extra data to be passed into the user's routine.  This should
+be NULL if no extra data are required.
+
+\end{itemize}
+
+The routine loops over all reactants and products in the reaction and
+computes their NSE correction factors.  From these, the routine then
+returns the double by which the reverse reaction rate should be multiplied
+to account for the electron screening effects.
+
+The second way to allow libnucnet to call the user-supplied correction
+factor routine is to set the correction factor for a given zone and
+let the\\
+Libnucnet\_\_Zone\_\_computeRates() routine call it.
+To do this, the user calls the routine
+Libnucnet\_\_Zone\_\_setNseCorrectionFactorFunction(),
+which has the prototype
+
+\begin{verbatim}
+void
+Libnucnet__Zone__setNseCorrectionFactorFunction(
+  Libnucnet__Zone *self,
+  Libnucnet__Species__nseCorrectionFactorFunction
+    my_correction_function,
+  void *p_my_data
+);
+\end{verbatim}
+
+The inputs to this routine are
+\begin{itemize}
+
+\item {\bf self:}  A pointer to the Libnucnet\_\_Zone under consideration.
+
+\item {\bf my\_correction\_function:}  The name of the user's correction
+factor function.  The user should cast this as a
+Libnucnet\_\_Species\_\_nseCorrectionFactorFunction.
+
+\item {\bf p\_my\_data:}  The pointer to the user's data structure.  If there
+are no extra data to pass to the user's function, this should be NULL.
+\end{itemize}
+
+The routine uses the user's routine to compute the reverse ratio correction
+factor $f_{corr}$ and applies it to the reverse rate for each reaction. 
+
+\section{Corrections and NSE}
+In order to be clear about the procedure for applying the screening and
+reverse ratio correction factors, we provide an example.  Consider the
+reaction
+\begin{equation}
+^{12}{\rm C} + \alpha \to ^{16}{\rm O} + \gamma. \label{eq:reaction}
+\end{equation}
+The contribution of this reaction
+to $dY({^{12}{\rm C}})/dt$, the time rate of change of the abundance
+of $^{12}$C, 
+is
+\begin{equation}
+-N_A \langle \sigma v \rangle \rho Y(^{12}{\rm C}) Y(\alpha ) + \lambda_\gamma
+Y(^{16}{\rm O}),  \label{eq:diffeq}
+\end{equation}
+where $N_A$ is Avogadro's number, $\langle \sigma v \rangle$ is the
+thermally-averaged interaction cross section for a reaction between 
+a $^{12}$C nucleus and an $\alpha$ particle, $\rho$ is the mass density,
+and $\lambda_\gamma$ is the rate per second for an $^{16}$O nucleus to
+disintegrate back into a $^{12}$C and an $\alpha$.
+
+If the system attains NSE, then detailed balance ensures that forward and
+reverse reaction flows come into balance.  Thus, 
+\begin{equation}
+N_A \langle \sigma v \rangle \rho Y_{NSE}(^{12}{\rm C}) Y_{NSE}(\alpha )
+= \lambda_\gamma Y_{NSE}(^{16}{\rm O}),  \label{eq:diffeqNse}
+\end{equation}
+This means that the ``reverse ratio'' $R$ relating the forward and reverse
+reaction rates is
+\begin{equation}
+R = \frac{\lambda_\gamma}{N_A \langle \sigma v \rangle} = 
+\frac{\rho Y_{NSE}(^{12}{\rm C}) Y_{NSE}(\alpha )}{Y_{NSE}(^{16}{\rm O})}.
+\label{eq:RevRatio}
+\end{equation}
+In this particular case, we can apply Eq. (\ref{eq:y_i_nse}) to find
+\begin{equation}
+R = \rho\frac{Y_{Q,^{12}{\rm C}} Y_{Q,\alpha}}{Y_{Q,^{16}{\rm O}}}
+\exp\left\{\frac{B_{^{12}{\rm C}}}{kT} + \frac{B_{\alpha}}{kT}
+- \frac{B_{^{16}{\rm O}}}{kT}\right\}.
+\label{eq:RevRatio2}
+\end{equation} 
+If we compute reverse rates from forward rates using reverse ratios computed
+from detailed balance in this way, our network will tend to evolve at
+constant temperature and density and
+in the absence of weak interaction rates to the expected NSE.
+
+We now compute screening.  Suppose the screening factor for the forward reaction
+in Eq. (\ref{eq:reaction}) is $F_{screen}(\alpha,\gamma)$ and for the reverse
+reaction is $F_{screen}(\gamma,\alpha)$.
+If we apply these screening factors, we find
+\begin{equation}
+R' = \frac{F_{screen}(\gamma,\alpha) \lambda_\gamma}{F_{screen}(\alpha,\gamma) N_A \langle \sigma v \rangle } =
+\frac{F_{screen}(\gamma,\alpha)}{F_{screen}(\alpha,\gamma)}
+\times R.
+\label{eq:RevRatioNew}
+\end{equation}
+
+Since libnucnet computes a reverse rate from a forward rate using detailed
+balance, the effect of screening on the reverse rate is obtained from
+consideration of the NSE achieved.
+As mentioned above,
+the user-supplied NSE correction factor function
+computes the factor by which $Y_{i,NSE}$, the
+NSE abundance of species $i$,
+changes due to the screening electrons; thus, if the user's routine
+returns the correction factor $f_{i,corr}$ for species $i$, then
+\begin{equation}
+Y_{i,NSE}' = e^{f_{i,corr}} \times Y_{i,NSE},
+\label{eq:newNse}
+\end{equation}
+where the prime indicates correction for the screening electrons.  Because
+of detailed balance, we thus know
+\begin{equation}
+R' =
+\frac{\rho Y_{NSE}'(^{12}{\rm C}) Y_{NSE}'(\alpha )}{Y_{NSE}'(^{16}{\rm O})}
+= e^{f_{^{12}{\rm C},corr} + f_{\alpha,corr} - f_{^{16}{\rm O},corr}} \times
+\frac{\rho Y_{NSE}(^{12}{\rm C}) Y_{NSE}(\alpha )}{Y_{NSE}(^{16}{\rm O})}
+\label{eq:RevRatioPrime}
+\end{equation}
+Comparison of Eqs. (\ref{eq:RevRatio}), (\ref{eq:RevRatioNew}),
+and (\ref{eq:RevRatioPrime}) shows that
+\begin{equation}
+F_{screen}(\gamma,\alpha) =
+e^{f_{^{12}{\rm C},corr} + f_{\alpha,corr} - f_{^{16}{\rm O},corr} } \times
+F_{screen}(\alpha,\gamma).
+\end{equation}
+We may write
+\begin{equation}
+R' = F_{corr} \times R.
+\end{equation}
+$F_{corr}$ is the reverse ratio correction factor, the quantity returned by\\
+\\
+Libnucnet\_\_Net\_\_computeReverseRatioCorrectionFactorForReaction()\\
+\\
+For the reaction in Eq. (\ref{eq:reaction}), it is clear that
+\begin{equation}
+F_{corr} = e^{f_{^{12}{\rm C},corr} + f_{\alpha,corr} - f_{^{16}{\rm O},corr}}.
+\end{equation}
+In general,
+\begin{equation}
+F_{screen}({\rm reverse}) = F_{corr} \times F_{screen}({\rm forward}).
+\end{equation}
+
+Libnucnet applies the user's screening function, that is, his or her\\
+\\
+Libnucnet\_\_screeningFunction()\\
+\\
+to compute the screening
+factor for the forward rate and then the user's\\
+\\
+Libnucnet\_\_Species\_\_nseCorrectionFactorFunction()\\
+\\
+on the various reactants to compute the reverse ratio correction factor
+and the screening factor for the
+reverse reaction.  With this treatment, the system will evolve in the
+absence of weak reactions and at constant temperature and
+density to the NSE appropriate
+to the user's NSE correction factor function [that is, once the abundances
+reach NSE, they will be given by Eq. (\ref{eq:newNse})].  Note that if the
+user does not supply an NSE correction factor function, the forward and
+reverse ratios have the same screening factor.
+This means the abundances will achieve the same NSE they would have in the
+absence of screening although the time to reach that equilibrium would
+typically be shorter.
+
+
+\begin{thebibliography}{1}
+
+\bibitem{1982ApJ...258..696W}
+{\sc R.~K. {Wallace}, S.~E. {Woosley}, and T.~A. {Weaver}}, {\em The
+  thermonuclear model for x-ray transients}, \apj, 258 (1982), pp.~696--715.
+
+\end{thebibliography}
+
+
+\end{document}

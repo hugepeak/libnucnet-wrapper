@@ -1,0 +1,498 @@
+%///////////////////////////////////////////////////////////////////////////////
+% <file type="public">
+%
+% <license>
+%   See the README_module.xml file for this module for copyright and license
+%   information.
+% </license>
+%   <description>
+%     <abstract>
+%       This is the Webnucleo Report for libnucnet iterators.
+%     </abstract>
+%     <keywords>
+%       libnucnet Module, webnucleo report, iterators
+%     </keywords>
+%   </description>
+%
+%   <authors>
+%     <current>
+%       <author userid="mbradle" start_date="2008/07/21" />
+%     </current>
+%     <previous>
+%     </previous>
+%   </authors>
+%
+%   <compatibility>
+%     TeX (Web2C 7.4.5) 3.14159 kpathsea version 3.4.5
+%   </compatibility>
+%
+% </file>
+%///////////////////////////////////////////////////////////////////////////////
+%
+% This is a sample LaTeX input file.  (Version of 9 April 1986)
+%
+% A '%' character causes TeX to ignore all remaining text on the line,
+% and is used for comments like this one.
+
+\documentclass{article}    % Specifies the document style.
+
+\usepackage[dvips]{graphicx}
+\usepackage{hyperref}
+
+\def\apj{Astrophys. J}
+
+                           % The preamble begins here.
+\title{Webnucleo Technical Report: libnucnet Iterators }
+
+\author{Bradley S. Meyer}
+%\date{December 12, 1984}   % Deleting this command produces today's date.
+
+\begin{document}           % End of preamble and beginning of text.
+
+\maketitle                 % Produces the title.
+
+
+This technical report describes how to iterate over species, reactions,
+or zones with libnucnet and how to apply functions during the iterations.
+
+\section{Iterations}
+
+Species, reactions, and zones are stored in hashes and lists in libnucnet.
+As of version 0.2 of libnucnet, a user loops over them by calling
+an iterator and supplying an iterate function to apply during the iteration.
+As of version 0.3, it is possible to iterate over reaction elements (reactants
+and products) and over optional properties assigned to a zone.
+
+\section{Iterating over Nuclear Species}
+
+To iterate over the species in a collection of species stored
+in a Libnucnet\_\_Nuc structure, the user first writes a routine to apply
+to each species during the iteration.  The prototype is
+
+\begin{verbatim}
+int
+my_iterate_function(
+  Libnucnet__Species *p_species,
+  void *p_my_data
+);
+\end{verbatim}
+
+The routine may have any appropriate name.  The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf p\_species:}  A pointer to a species in the collection.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.
+
+\end{itemize}
+
+\noindent The routine must return 1 to continue iteration or 0 (zero) to stop.
+
+The user then calls the function to apply with the Libnucnet\_\_Nuc API
+routine Libnucnet\_\_Nuc\_\_iterateSpecies() routine, which has the prototype
+
+\begin{verbatim}
+void
+Libnucnet__Nuc__iterateSpecies(
+  Libnucnet__Nuc *self,
+  Libnucnet__Species__iterateFunction pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Nuc structure, which contains
+the collection of nuclear species.
+
+\item {\bf pf\_function:} The name of the user's function to be applied
+during the iteration.
+Typically, this needs to be cast as a
+Libnucnet\_\_Species\_\_iterateFunction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-define data structure containing
+extra data to be passed to the user's iterate function.  If there are
+no extra data, this should be NULL.
+
+\end{itemize}
+
+For example, suppose we want to count the number of species with
+$Z \geq 10$ in the
+Libnucnet\_\_Nuc structure pointed to by p\_my\_nuclei and print out
+their name.  We first write an iterate function, which we will
+call my\_counter\_and\_printer:
+
+\begin{verbatim}
+int
+my_counter_and_printer(
+  Libnucnet__Species *p_species,
+  int *p_count
+)
+{
+
+  if( !p_species || !p_count ) 
+  {
+    fprintf( stderr, "Problem with species or user data.\n" );
+    return 0;
+  }
+
+  if( Libnucnet__Species__getZ( p_species ) >= 10 )
+  {
+    printf(
+      "Species number %d is %s\n",
+      *p_count++,
+      Libnucnet__Species__getName( p_species )
+    );
+  }
+
+  return 1;
+
+} 
+
+\end{verbatim}
+
+\noindent Then to apply this routine, the user calls it from his or her program:
+
+\begin{verbatim}
+i_count = 0;
+Libnucnet__Nuc__iterateSpecies(
+  p_my_nuclei,
+  (Libnucnet__Species__iterateFunction) my_counter_and_printer,
+  &i_count
+);
+\end{verbatim}
+
+In this example, the code initializes i\_count to zero and then iterates
+over the species included in p\_my\_nuclei and applies my\_counter\_and\_printer
+to each species.  Note that the species are iterated in the order in which
+they were stored [or were previously sorted, if the user previously called
+Libnucnet\_\_Nuc\_\_sortSpecies()].
+Examples in the libnucnet distribution provide further
+details and examples on how to write, apply, compile, and link iterators.
+
+\section{Iterating over Reactions} 
+
+To iterate over reactions in a reaction collection,
+the user supplies a routine to apply to a
+reaction iteration.  The prototype is
+
+\begin{verbatim}
+int
+my_reaction_iterate_function(
+  Libnucnet__Reaction *p_reaction,
+  void *p_my_data
+);
+\end{verbatim}
+
+\noindent The routine may have any appropriate name.  The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf p\_reaction:}  A pointer to a reaction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.
+
+\end{itemize}
+
+\noindent
+The routine must return 1 to continue iteration or 0 (zero) to stop.
+
+The user then calls the function to apply with the Libnucnet\_\_Reac API
+routine Libnucnet\_\_Reac\_\_iterateReactions() routine, which has the prototype
+
+\begin{verbatim}
+void
+Libnucnet__Reac__iterateReactions(
+  Libnucnet__Reac *self,
+  Libnucnet__Reaction__iterateFunction pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent
+The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Reac structure, which contains
+the collection of reactions.
+
+\item {\bf pf\_function:} The name of the user's function to be applied
+during the iteration.
+Typically, this needs to be cast as a
+Libnucnet\_\_Reaction\_\_iterateFunction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.  If there are
+no extra data, this should be NULL.
+
+\end{itemize}
+
+Again, examples in the libnucnet distribution provide further demonstration of
+the user of reaction iterators.  As of version 0.4, reactions are iterated
+in the order in which they are stored internally in the Libnucnet\_\_Reac
+structure.  The user does not define this.  To iterate in a different order,
+the user supplies a Libnucnet\_\_Reaction\_\_compare\_function and sets it
+with Libnucnet\_\_Reac\_\_setReactionCompareFunction().  To restore the
+default, the user should call
+Libnucnet\_\_Reac\_\_clearReactionCompareFunction().
+If the number of reactions is large, the iteration in the default order can be
+much faster than one that requires a sorting.  For this reason, the default
+should be used where possible.
+
+\section{Iterating over Reaction Elements} 
+
+Reaction elements are reactants or products in a reaction.  As of version
+0.3, it is possible to iterate over them.  To do so,
+the user supplies a routine to apply to a
+reaction element iteration.  The prototype is
+
+\begin{verbatim}
+int
+my_reaction_element_iterate_function(
+  Libnucnet__Reaction__Element *p_element,
+  void *p_my_data
+);
+\end{verbatim}
+
+\noindent The routine may have any appropriate name.  The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf p\_element:}  A pointer to a reaction element
+(a reactant or product).
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.
+
+\end{itemize}
+
+\noindent
+The routine must return 1 to continue iteration or 0 (zero) to stop.
+
+The user then calls the function to apply with the Libnucnet\_\_Reac API
+routine Libnucnet\_\_Reaction\_\_iterateReactants() or
+Libnucnet\_\_Reaction\_\_iterateProducts() routine, which have the prototypes
+
+\begin{verbatim}
+void
+Libnucnet__Reaction__iterateReactants(
+  Libnucnet__Reaction *self,
+  Libnucnet__Reaction__Element__iterateFunction pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent and
+
+\begin{verbatim}
+void
+Libnucnet__Reaction__iterateProducts(
+  Libnucnet__Reaction *self,
+  Libnucnet__Reaction__Element__iterateFunction pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent
+The necessary inputs for both are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Reaction structure, which contains
+the collection of reactants and products.
+
+\item {\bf pf\_function:} The name of the user's function to be applied
+during the iteration.
+Typically, this needs to be cast as a
+Libnucnet\_\_Reaction\_\_Element\_\_iterateFunction.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.  If there are
+no extra data, this should be NULL.
+
+\end{itemize}
+
+Again, examples in the libnucnet distribution provide further demonstration of
+the user of reaction element iterators.  Note that the reaction elements
+are iterated in the order in which they were stored.  The Libnucnet\_\_Reac
+API routine Libnucnet\_\_Reaction\_\_Element\_\_isNuclide() is convenient
+for distinguishing between nuclide and non-nuclide reactants or products
+while the routine Libnucnet\_\_Reaction\_\_Element\_\_getName() retrieves
+the reaction element name.
+
+\section{Iterating over Zones} 
+
+Iterating on zones is analogous to iterating on nuclides, reactions, or
+reaction elements.  The iterate function has the prototype
+
+\begin{verbatim}
+int
+my_iterate_function(
+  Libnucnet__Zone *p_zone,
+  void *p_my_data
+);
+\end{verbatim}
+
+\noindent
+The routine may have any appropriate name.  The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf p\_zone:}  A pointer to a zone.
+
+\item {\bf p\_my\_data:}  A pointer to a user-defined data structure containing
+extra data to be passed to the user's iterate function.
+
+\end{itemize}
+
+\noindent
+The routine must return 1 to continue iteration or 0 (zero) to stop.
+
+To iterate over the zones, the user then calls
+Libnucnet\_\_iterateZones(), which has the prototype:
+
+\begin{verbatim}
+void
+Libnucnet__iterateZones(
+  Libnucnet *self,
+  (Libnucnet__Zone__iterateFunction) pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent
+The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet structure, which contains
+the collection of zones.
+
+\item {\bf pf\_function:} The name of the user's function to be applied
+during the iteration.
+Typically, this needs to be cast as a
+Libnucnet\_\_Zone\_\_iterateFunction.
+
+\item {\bf p\_user\_data:}  A pointer to a user-defined data structure
+containing extra data to be passed to the user's iterate function.  If there
+are no extra data, this should be NULL.
+
+\end{itemize}
+
+As of version 0.4, zones are iterated
+in the order in which they are stored internally in the Libnucnet
+structure.  The user does not define this.  To iterate in a different order,
+the user supplies a Libnucnet\_\_Zone\_\_compare\_function and sets it
+with Libnucnet\_\_setZoneCompareFunction().  To restore the
+default, the user should call
+Libnucnet\_\_clearZoneCompareFunction().
+If the number of zones is large, the iteration in the default order can be
+much faster than one that requires a sorting.  For this reason, the default
+should be used where possible.
+
+\section{Iterating over Zone Optional Properties} 
+
+As of version 0.3, it is possible to assign optional properties to a zone.
+An optional property is stored as a string and is identified by another
+string giving its name and up to two optional tags.  It is likely a user
+will retrieve the property by an API routine; nevertheless
+it is the case that one may
+want to iterate over the optional properties of a zone.  This is possible.
+The iterate function to be applied during such an iteration has the prototype
+
+\begin{verbatim}
+int
+my_iterate_function(
+  const char *s_name,
+  const char *s_tag1,
+  const char *s_tag2,
+  const char *s_value,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent
+The routine may have any appropriate name.
+The routine must return 1 to continue iteration or 0 (zero) to stop.
+The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf s\_name:}  A string giving the name of the property.
+
+\item {\bf s\_tag1:}  A string giving the first tag of the property.
+
+\item {\bf s\_tag2:}  A string giving the second tag of the property.
+
+\item {\bf s\_value:}  A string giving the value of the property.
+
+\item {\bf p\_user\_data:}  A pointer to a user-defined data structure
+containing extra data to be passed to the user's iterate function.
+
+\end{itemize}
+
+\noindent
+
+To iterate over the zone's optional properties, the user then calls
+Libnucnet\_\_iterateZones(), which has the prototype:
+
+\begin{verbatim}
+void
+Libnucnet__Zone__iterateOptionalProperties(
+  Libnucnet__Zone *self,
+  const char *s_name,
+  const char *s_tag1,
+  const char *s_tag2,
+  Libnucnet__Zone__optional_property_iterate_function pf_function,
+  void *p_user_data
+);
+\end{verbatim}
+
+\noindent
+The necessary inputs are:
+
+\begin{itemize}
+
+\item {\bf self:} A pointer to a Libnucnet\_\_Zone.
+
+\item {\bf s\_name:} The property name.  NULL is considered to match on all
+property names.  If a name is supplied, the iteration will be over
+properties that match that name.
+
+\item {\bf s\_tag1:} The first tag.  NULL is considered to match on all first
+tags.  If tag1 is supplied, the iteration will be over properties that match
+that tag.
+
+\item {\bf s\_tag2:} The second tag.  NULL is considered to match on all second
+tags.  If tag2 is supplied, the iteration will be over properties that match
+that tag.
+
+\item {\bf pf\_function:} The name of the user's function to be applied
+during the iteration.
+Typically, this needs to be cast as a
+Libnucnet\_\_Zone\_\_optional\_property\_iterate\_function.
+
+\item {\bf p\_user\_data:}  A pointer to a user-defined data structure
+containing extra data to be passed to the user's iterate function.  If there
+are no extra data, this should be NULL.
+
+\end{itemize}
+
+As of version 0.6, properties are iterated in the order in which they are
+stored internally.  The user does not have control over this ordering.  This
+is a change from previous versions in which the iteration was alphabetical
+over the properties according to their name or tag.  The new iteration
+scheme can be considerably faster for a large number of properties.
+Examples in the libnucnet distribution provide further
+details.
+
+%\bibliographystyle{siam}
+%\bibliography{clemson}
+
+\end{document}

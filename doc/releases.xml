@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!--////////////////////////////////////////////////////////////////////////////
+// <file type="public">
+//
+//   <license>
+//     Please see the src/README.txt in this distribution for more copyright
+//     and license information.
+//   </license>
+//
+//   <description>
+//     <abstract>
+//       xml file giving the release log
+//     </abstract>
+//     <keywords>
+//       xml, example, releases
+//     </keywords>
+//   </description>
+//
+//   <authors>
+//     <current>
+//       <author userid="mbradle" start_date="2011/05/28" />
+//     </current>
+//     <previous>
+//     </previous>
+//   </authors>
+//
+//   <compatibility>
+//     Tested in mozilla, firefox.
+//   </compatibility>
+//
+// </file>
+/////////////////////////////////////////////////////////////////////////////-->
+
+<release_log>
+
+  <license>
+    This is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This software is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+  </license>
+
+  <release
+    name = "0.12"
+    date = "2011-12-30"
+  >
+    <new>
+      <item>
+        The API routine to update user rate function data now has a check
+        the the rate function is registered.
+      </item>
+      <item>
+        It is now possible to copy a Network view from one zone to another.
+      </item>
+      <item>
+        It is now possible to update the evolution network during a calculation.
+        An example code has been added to demonstrate this capability.
+      </item>
+      <item>
+        Routines to get the largest nucleon numbers and abundances summed
+        by Z, N, or A have been added to the API.  Example codes have been
+        added to demonstrate these routines.
+      </item>
+      <item>
+        A new routine returns the standard Jacobian.
+      </item>
+    </new>
+    <fix>
+      <item>
+        The usage statement in the example code update_reac_data_to_xml.c has
+        been corrected (fixes 3371635).
+      </item>
+      <item>
+        Some documentation typos have been fixed.
+      </item>
+      <item>
+        The example Kunz et al. (2002) fit function and data have been
+        corrected (fixes 3421904 and 3421906).
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        The distributed code no longer refers to a version number.  This
+        may be obtained from the distribution directory name.
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.11"
+    date = "2011-07-18"
+  >
+    <new>
+      <item>
+        A new API routine Libnucnet__updateZoneXmlMassFractionFormat() now permits the user to choose the format code for output of zone mass fractions to an xml file.  An example has been modified to illustrate this new routine.
+      </item>
+      <item>
+        A new API routine Libnucnet__Zone__addCopyOfNetView() allows the user to copy an existing NetView to a zone.  An example has been modified to illustrate the use of this routine.
+      </item>
+      <item>
+        A new example shows how to update a reaction xml file with a second reaction xml file and output the result to a new xml file.
+      </item>
+    </new>
+  </release>
+
+  <release
+    name = "0.10"
+    date = "2011-06-13"
+  >
+    <new>
+      <item>
+        The defining XPath expressions for views may now be retrieved from
+        views by new API routines.  Examples illustrate these new routines.
+      </item>
+      <item>
+        It is now possible to apply a user-defined deallocator routine
+        to data for a user-defined rate function.
+      </item>
+    </new>
+    <fix>
+      <item>
+        A missing cast in a net view look up has been added to allow a
+        clean compile with g++ (fixes 3314818).
+      </item>
+      <item>
+        The default value for D_LARGE (the quantity governing how much larger
+        the reverse rate can be relative to the forward rate) has been
+        increased in Libnucnet.h.
+      </item>
+      <item>
+        Some documentation typos have been fixed.
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        The regression test script now downloads data automatically.
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.9"
+    date = "2011-05-28"
+  >
+    <new>
+      <item>
+        Code is now hosted at SourceForge.net.
+      </item>
+      <item>
+        The examples/ directory now includes a regression test script
+        generator.
+      </item>
+      <item>
+        It is now possible to get views of nuclide and reaction collections
+        and networks.  New and modified examples demonstrate the use
+        of views.
+      </item>
+    </new>
+    <reorganization>
+      <item>
+        Examples directory has moved to same level as src/.
+      </item>
+      <item>
+        Example codes now have descriptive names.
+      </item>
+      <item>
+        Data for example codes is now downloaded separately.
+      </item>
+      <item>
+        Extra data for user-defined rate functions are only stored in zones.
+        This means getDataForRateFunction() is no longer in the API.
+      </item>
+      <item>
+        It is no longer necessary to set user rate functions for the
+        Libnucnet__Reac structure after registering them.
+        This means setUserRateFunction() and
+        setUserRateFunctions() have been removed from the API.
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.8"
+    date = "2011-05-14"
+  >
+    <new>
+      <item>
+        The user no longer needs to make the tmp directory for compiling
+        example codes.
+      </item>
+    </new>
+    <reorganization>
+      <item>
+        The prototype for computeRate() has changed and now takes extra data as
+        input.  This is a backwards-incompatible change in the API.
+      </item>
+      <item>
+        The routine getDataForUserRateFunction() has been renamed to
+        getDataForRateFunction(). This is a backwards-incompatible change in
+        the API.
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.7"
+    date = "2010-09-06"
+  >
+    <new>
+      <item>
+        Routines to copy a zone, compute a species quantum abundance, and
+        a nuclear species binding energy have been added to the API.
+        Example codes have been added or modified to demonstrate these new
+        routines.
+      </item>
+      <item>
+        Darmstadtium, Roentgenium, and Copernicium have been added to the
+        element name list.
+      </item>
+      <item>
+        The ability to include elements with unassigned names
+        (for example, ubn--unbinilium--for Z = 120) has been added to the API.
+      </item>
+    </new>
+    <fix>
+      <item>
+        A number of documentation typos have been fixed.
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        Parameters in example codes have been moved into defines.
+      </item>
+      <item>
+        Example codes that validate xml input now have flags to allow
+        the user to turn off validation (default is to validate).
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.6"
+    date = "2010-05-03"
+  >
+    <new>
+      <item>
+        Routines to output Libnucnet__Net and Libnucnet structures
+        to xml have been added to the API.  New examples demonstrate
+        these new routines.
+      </item>
+      <item>
+        A routine to check the zone data against the webnucleo.org
+        zone data schema has been added.
+      </item>
+      <item>
+        The zone data schema now checks that an input mass fraction
+        lies between zero and one.
+      </item>
+      <item>
+        A check on the agreement between (z,a) and name of species
+        in input zone data has been added in the zone data parser.
+      </item>
+      <item>
+        Checks have been added on input zones for routines on species
+        abundances, abundance changes, and optional properties.
+      </item>
+      <item>
+        A check has been added to catch unregistered user rate function
+        keys.
+      </item>
+      <item>
+        It is now possible to include di-neutrons in the reaction network.
+      </item>
+    </new>
+    <fix>
+      <item>
+        A number of documentation typos have been fixed.
+      </item>
+      <item>
+        A possible memory leak if update of user-defined properties fails
+        has been fixed.
+      </item>
+      <item>
+        A missing tau in usage statement of single zone network example
+        has been added.
+      </item>
+      <item>
+        Libnucnet__Nuc__getSpeciesByZA() no longer crashes when input Z
+        larger than largest Z in network.
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        Namespaces have been simplified.  The prefixes have
+        been removed; however, the parser should still be able to handle
+        them in most cases.
+      </item>
+      <item>
+        Iteration over zone optional properties is now a direct scan.  This
+        is potentially much faster than in previous versions; however, the
+        iteration order in no longer alphabetical by property name but rather
+        by the order in which the properties are stored internally,
+        an ordering the user does not control.
+      </item>
+    </reorganization>
+  </release>
+
+  <release
+    name = "0.5"
+    date = "2010-01-11"
+  >
+    <new>
+      <item>
+        Iteration over species, reactions, and zones now uses qsort()
+        for ordering.  This should dramatically speed up iteration of
+        large collections.
+      </item>
+      <item>
+        It is now possible for the user to define his/her own rate
+        function and to apply it to rate calculations.  A new technical
+        report describes and the examples now illustrate how to apply such
+        rate functions.
+      </item>
+    </new>
+    <fix>
+      <item>
+        Libnucnet__Nuc__writeToXmlFile() now correctly outputs isomer.
+      </item>
+      <item>
+        Old single ground state is now correctly removed if species
+        updated with ground and isomer.
+      </item>
+      <item>
+        Network evolution example codes now demonstrate Newton-Raphson
+        iterations more correctly.
+      </item>
+      <item>
+        The prototypes of accessor routines have been changed to reflect
+        const correctness better.  This is a backwards compatible
+        change.
+      </item>
+    </fix>
+  </release>
+
+  <release
+    name = "0.4"
+    date = "2009-05-18"
+  >
+    <new>
+      <item>
+        Two new examples demonstrate how to check that forward and reverse
+        reaction rates lie within specified bounds and how to run a single
+        zone network calculation with input thermodynamic and initial
+        mass fraction data from a text file.
+      </item>
+      <item>
+        It is now possible for the user to specify the order in which
+        reactions and zones are iterated over with their iterators.
+        The user specifies these with user-defined compare functions
+        that are set and cleared with API routines. The default iteration
+        order for both reactions and zones is now based on their internal
+        storage, which the user does not define.  The default iteration for
+        reactions or zones can be considerably faster than one requiring
+        sorting and should be used whenever possible.
+      </item>
+      <item>
+        The routines Libnucnet__Species__updatePartitionFunctionData() and
+        Libnucnet__Reaction__updateRateTable() now sort the input data
+        by temperature before storing them.
+      </item>
+      <item>
+        The single zone evolution examples now use the new wn_matrix arrow
+        solver by default (though the user can still change to use the gsl
+        lu decomp routine).  This requires an upgrade to wn_matrix 0.8 or
+        later.  The arrow solver can run much faster than the gsl lu decomp
+        routine for large networks.
+      </item>
+    </new>
+    <fix>
+      <item>
+        The argument check for the single zone evolution example has been fixed.
+      </item>
+      <item>
+        A bug that caused the routine to compute the nuclear partition function 
+        to crash when the species only has two partition function points has
+        been fixed.  The similar bug for computing reaction rates from rate
+        tables has also been fixed.
+      </item>
+      <item>
+        Some usage statements in the example codes have been fixed or
+        made clearer.
+      </item>
+      <item>
+        Some typos in the documentation have been fixed.
+      </item>
+    </fix>
+  </release>
+
+  <release
+    name = "0.3"
+    date = "2009-01-27"
+  >
+    <new>
+      <item>
+        The following new API routines have been added:
+          Libnucnet__Nuc__clearSpeciesCompareFunction,
+          Libnucnet__Nuc__extractSubset,
+          Libnucnet__Nuc__updateSpecies,
+          Libnucnet__Reac__extractSubset,
+          Libnucnet__Reac__updateReaction,
+          Libnucnet__Reaction__Element__getName,
+          Libnucnet__Reaction__Element__isNuclide,
+          Libnucnet__Reaction__copy,
+          Libnucnet__Reaction__free,
+          Libnucnet__Reaction__iterateProducts,
+          Libnucnet__Reaction__iterateReactants,
+          Libnucnet__Reaction__new,
+          Libnucnet__Species__copy,
+          Libnucnet__Species__free,
+          Libnucnet__Species__getPartitionFunctionLog10,
+          Libnucnet__Species__getPartitionFunctionT9,
+          Libnucnet__Species__updateMassExcess,
+          Libnucnet__Species__updatePartitionFunctionData,
+          Libnucnet__Species__updateSource,
+          Libnucnet__Species__updateSpin,
+          Libnucnet__Zone__getProperty,
+          Libnucnet__Zone__iterateOptionalProperties,
+          Libnucnet__Zone__new,
+          Libnucnet__Zone__removeProperty,
+          Libnucnet__Zone__updateProperty,
+          Libnucnet__relabelZone,
+          Libnucnet__writeZoneDataToXml
+      </item>
+      <item>
+        The structure Libnucnet__Reaction__Element has been added to
+        the API.  Reaction elements are reactants or products.  API
+        routines allow the user to get the names of the reaction elements,
+        determine whether they are nuclides or not, and iterate over them.
+      </item>
+      <item>
+        Non-smoker fits now have high temperature limits.  The default
+        is 10 billion K, but the user may set this in the data xml file.
+      </item>
+      <item>
+        It is now possible to get mass fraction data in a zone by z and a
+        or by the species name.
+      </item>
+      <item>
+        It is now possible to add, update, and retrieve optional properties
+        for a zone.  It is also possible to iterate over the properties.
+      </item>
+      <item>
+        It is now possible to sort the species with a user-supplied
+        data compare function.
+      </item>
+      <item>
+        A number of new examples and their associated data demonstrate
+        the new API capabilities.
+      </item>
+      <item>
+        Generated example xml files are now included in the distribution
+        tarball.  This allows users to run any of the examples right away.
+      </item>
+    </new>
+    <fix>
+      <item>
+        A number of documentation typos have been fixed.
+      </item>
+      <item>
+        The usage statement for the modified reaction rate single zone
+        calculation has been fixed (bug reported by Tianhong Yu).
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        The prototypes of a number of API routines have changed.  These 
+        are backwards incompatibilities and users should update.  The changed
+        routines are:
+          Libnucnet__Nuc__addSpecies,
+          Libnucnet__Nuc__removeSpecies,
+          Libnucnet__Reac__addReaction,
+          Libnucnet__Reac__new_from_xml,
+          Libnucnet__Reaction__addNonSmokerFit,
+          Libnucnet__Zone__updateAbundanceChanges,
+          Libnucnet__Zone__updateAbundances,
+          Libnucnet__addZone,
+          Libnucnet__new_from_xml.
+      </item> 
+      <item>
+        The following routines have been removed from the API:
+          Libnucnet__Reaction__getNumberOfProducts,
+          Libnucnet__Reaction__getNumberOfReactants,
+          Libnucnet__assignZonesFromXml. 
+      </item>
+      <item>
+        The xml zone data schema has changed.
+      </item>
+    </reorganization>
+    <internal>
+      <item>
+        The validity of reactions is now checked only when the network
+        has been updated.  This results in a good speed up of network
+        calculations.
+      </item>
+    </internal>
+  </release>
+
+  <release
+    name = "0.2"
+    date = "2008-08-01"
+  >
+    <new>
+      <item>
+        Libnucnet now can apply user-defined routines and data to compute
+        the effect of screening electrons on nuclear reaction rates.
+        Several examples in the distribution demonstrate how to apply
+        user-defined routines to reaction rate calculations and how
+        to use them in single-zone or multi-zone nucleosynthesis
+        calculations.
+      </item>
+      <item>
+        New routines allow a user to extract the abundances and abundance
+        changes of a zone into gsl_vector structures.
+      </item>
+      <item>
+        Libnucnet now handles mu and tau leptons as reactants and products.
+      </item>
+      <item>
+        A new API routine now returns a Libnucnet__Reac structure containing
+        duplicate reactions.  Distribution examples demonstrate how to use
+        this routine and how to then remove duplicate reactions.
+      </item>
+      <item>
+        Libnucnet now handles multiple fits for a non-smoker reaction.
+      </item>
+    </new>
+    <fix>
+      <item>
+        Re-indexing of all species after species removal has been fixed.
+      </item>
+      <item>
+        A bug that prevented a species abundance change from being updated
+        when it is zero has been fixed.
+      </item>
+      <item>
+        Several typos in the documentation have been fixed.
+      </item>
+      <item>
+        The symbol for Francium has been changed from incorrect fe to correct
+        fr (bug reported by Lih-Sin The).
+      </item>
+    </fix>
+    <reorganization>
+      <item>
+        The xml tag for the mass excess has been changed from mass to
+        mass_excess.
+      </item>
+      <item>
+        Species, reactions, and zones are now looped over by iterators.
+        A user now supplies a iterate function to be applied during the
+        iteration.  The distribution examples have been modified to reflect
+        this change.
+      </item>
+      <item>
+        Libnucnet__Zone__computeFlowVector() now returns a gsl_vector.
+      </item>
+      <item>
+        Libnucnet now builds a reaction string from addReactant() and
+        addProduct() routines.
+      </item>
+      <item>
+        The routine to add partition function data now uses gsl_vectors.
+      </item>
+      <item>
+        The Q value calculation routine has been renamed.
+      </item>
+    </reorganization>
+  </release>
+  <release
+    name = "0.1"
+    date = "2007-10-16"
+  >
+    <new>
+      <item>
+        Initial Release
+      </item>
+    </new>
+  </release>
+</release_log>
